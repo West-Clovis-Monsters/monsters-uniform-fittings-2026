@@ -1235,7 +1235,7 @@ function LogisticsScreen({ setScreen }) {
         {
           num: "1", title: "Before You Arrive",
           items: [
-            "Save this page as an app on your phone — tap the share icon → "Add to Home Screen" (Kass and Erin will help)",
+            "Save this page as an app on your phone — tap the share icon → Add to Home Screen (Kass and Erin will help)",
             "All fitting data saves automatically to this device — no login needed",
             "Coaches: open Equipment Sizing. Board: open Parent Sign-Off",
           ]
@@ -1341,7 +1341,7 @@ function App() {
     home:   <HomeScreen setScreen={setScreen} />,
     parent: <ParentScreen {...shared} />,
     coach:  <CoachScreen  {...shared} />,
-    roster: <RosterScreen players={players} setScreen={setScreen} />,
+    roster: <RosterScreen players={players} savePlayers={savePlayers} setScreen={setScreen} />,
     logistics: <LogisticsScreen setScreen={setScreen} />,
   }[screen] || <HomeScreen setScreen={setScreen} />;
 }
