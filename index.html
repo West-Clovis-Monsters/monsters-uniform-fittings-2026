@@ -1333,23 +1333,6 @@ function LogisticsScreen({ setScreen }) {
         </div>
       ))}
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #3a3a5c", borderRadius: "10px", padding: "16px 18px", marginTop: "8px", marginBottom: "14px" }}>
-        <div style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px", color: "#8888ff", letterSpacing: "1px", marginBottom: "8px" }}>⚙️ MULTI-DEVICE SYNC SETUP</div>
-        <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "12px", color: MUT, lineHeight: 1.7, marginBottom: "10px" }}>
-          By default, data saves to each device locally. For real-time sync across all coaches and board iPads, set up a free Firebase database (5 min):
-        </div>
-        <ol style={{ paddingLeft: "18px", margin: 0 }}>
-          {[
-            "Go to console.firebase.google.com → Add project",
-            "Build → Realtime Database → Create database → Start in test mode",
-            "Copy your database URL (looks like: https://your-project.firebaseio.com)",
-            "Open this page URL and add ?db=YOUR_DB_URL to the end, then bookmark that URL",
-          ].map((step, i) => (
-            <li key={i} style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "12px", color: WHT, lineHeight: 1.7, marginBottom: "2px" }}>{step}</li>
-          ))}
-        </ol>
-      </div>
-
       <div style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}44`, borderRadius: "10px", padding: "16px 18px", marginTop: "8px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <div style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px", color: GOLD, letterSpacing: "1px" }}>SHARE THIS LINK</div>
