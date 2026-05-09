@@ -34,13 +34,17 @@
             const arr = Object.values(data);
             if (arr.length) return arr;
           }
-        } catch(e) { console.warn('Firebase load failed, using localStorage', e); }
+          // Firebase empty — use fresh SEED_PLAYERS, skip stale localStorage
+          return SEED_PLAYERS;
+        } catch(e) {
+          console.warn('Firebase load failed, using localStorage', e);
+          // Only fall back to localStorage if Firebase is unreachable
+          try {
+            const saved = JSON.parse(localStorage.getItem('wcm_fittings_v2') || 'null');
+            if (saved && saved.length) return saved;
+          } catch {}
+        }
       }
-      // Fallback: localStorage
-      try {
-        const saved = JSON.parse(localStorage.getItem('wcm_fittings_v2') || 'null');
-        if (saved && saved.length) return saved;
-      } catch {}
       return SEED_PLAYERS;
     }
 
