@@ -22,11 +22,7 @@
 
     // ── Firebase config — replace DB_URL with your Firebase Realtime DB URL ──
     // See Day-Of Logistics page for setup instructions
-    const DB_URL = (() => {
-      const p = new URLSearchParams(window.location.search).get('db');
-      if (p) { localStorage.setItem('wcm_db_url', p); return p; }
-      return localStorage.getItem('wcm_db_url') || null;
-    })();
+    const DB_URL = 'https://monsters-uniform-fittings-2026-default-rtdb.firebaseio.com';
 
     async function loadPlayers() {
       if (DB_URL) {
