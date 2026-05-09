@@ -157,7 +157,6 @@ const SEED_PLAYERS = [
   blankPlayer("pw19",  "Aiden",    "Sam",          77,  "Peewees"),
   blankPlayer("pw20",  "Jaxon",    "Sam",           8,  "Peewees"),
   blankPlayer("pw21",  "Bodhi",    "Sanchez",      10,  "Peewees"),
-  blankPlayer("pw22",  "Josephine","Sardisco",      3,  "Peewees"),
   blankPlayer("pw23",  "Matteo",   "Sardisco",      2,  "Peewees"),
   blankPlayer("pw24",  "Zackary",  "Weaver",        5,  "Peewees"),
 ];
@@ -398,7 +397,7 @@ function HomeScreen({ setScreen }) {
     { id: "coach",  icon: "🏈", title: "Equipment Sizing",    sub: "Enter uniform sizing for players",          bg: "#1a3a5c" },
     { id: "parent", icon: "✍️", title: "Parent Sign-Off",    sub: "Review equipment costs & sign agreement",  bg: CARD },
     { id: "roster", icon: "📋", title: "View Roster",        sub: "See all fittings organized by level",       bg: "#1a3a1a" },
-    { id: "admin",  icon: "⚙️", title: "Admin / Roster Setup", sub: "Add and manage players on the roster",   bg: G2 },
+    { id: "logistics", icon: "📋", title: "Day-Of Logistics",   sub: "Fitting day guide for coaches & board",  bg: "#1a2a1a" },
   ];
   return (
     <div style={{ background: BLK, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px 40px" }}>
@@ -633,7 +632,7 @@ function ParentScreen({ players, savePlayers, setScreen }) {
               ["Email", email],
               ["Phone", phone],
               ["Date", fmtDate(new Date().toISOString())],
-              ["Total Liability", `$${TOTAL_LOANED}`],
+              ["Total Liability", `${LOANED.reduce((s,i)=>s+((i.item==="Helmet"&&selected.ownHelmet)||(i.item==="Shoulder Pads"&&selected.ownPads)?0:i.cost),0)}`],
             ].map(([lbl, val]) => (
               <div key={lbl} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${G3}` }}>
                 <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "13px", color: MUT }}>{lbl}</span>
@@ -822,7 +821,7 @@ function ParentScreen({ players, savePlayers, setScreen }) {
             is loaned for the 2026 West Clovis Monsters season. I agree to return all loaned equipment in
             acceptable condition at the end of the season. If any item is not returned, I authorize West Clovis
             Monsters to charge the replacement cost listed above. Total potential liability:{" "}
-            <strong style={{ color: GOLD }}>${TOTAL_LOANED}</strong>.
+            <strong style={{ color: GOLD }}>${LOANED.reduce((s,i)=>s+((i.item==="Helmet"&&selected.ownHelmet)||(i.item==="Shoulder Pads"&&selected.ownPads)?0:i.cost),0)}</strong>.
           </div>
 
           <label style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer", marginBottom: "20px" }}>
@@ -1044,7 +1043,7 @@ function CoachScreen({ players, savePlayers, setScreen }) {
       </div>
 
       {players.length === 0 ? (
-        <Empty msg="No players yet. Go to Admin Setup to add your roster." />
+        <Empty msg="No players yet. Scroll down to add players to the roster." />
       ) : (
         <LevelNamePicker players={players} onSelect={p => open(p)} syncLevel={syncLevel} />
       )}
@@ -1053,7 +1052,7 @@ function CoachScreen({ players, savePlayers, setScreen }) {
 }
 
 // ── Roster View ──────────────────────────────────────────────────────
-function RosterScreen({ players, setScreen }) {
+function RosterScreen({ players, savePlayers, setScreen }) {
   const [lvl, setLvl]   = useState("All");
   const [showExport, setShowExport] = useState(false);
 
@@ -1140,17 +1139,17 @@ function RosterScreen({ players, setScreen }) {
                 <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "11px", color: MUT, marginTop: "2px" }}>{p.level}</div>
               </div>
               <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
-                {p.parentSigned && <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "10px", color: GRN, background: `${GRN}22`, border: `1px solid ${GRN}44`, borderRadius: "4px", padding: "2px 6px", letterSpacing: "0.5px" }}>✓ AGR</span>}
+                {p.parentSigned && <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "10px", color: GRN, background: `${GRN}22`, border: `1px solid ${GRN}44`, borderRadius: "4px", padding: "2px 6px", letterSpacing: "0.5px" }}>✓ SIGNED</span>}
                 {!isFitted(p) && <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "10px", color: GOLD, letterSpacing: "0.5px" }}>PENDING</span>}
               </div>
             </div>
             {isFitted(p) ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {[
-                  ["Helmet", `${p.helmetBrand} ${p.helmetSize}`],
+                  ["Helmet", p.ownHelmet ? "Own Helmet ✓" : `${p.helmetBrand} ${p.helmetSize}`],
                   ["Jersey", p.jerseySize],
                   ["Pants", p.pantsSize],
-                  ["Pads", `${p.padsBrand ? p.padsBrand + " " : ""}${p.padsSize}`],
+                  ["Pads", p.ownPads ? "Own Pads ✓" : `${p.padsBrand ? p.padsBrand + " " : ""}${p.padsSize}`],
                 ].map(([lbl, val]) => (
                   <div key={lbl} style={{
                     background: G2, borderRadius: "4px", padding: "4px 10px",
@@ -1166,25 +1165,31 @@ function RosterScreen({ players, setScreen }) {
           </div>
         ))
       )}
+
+      {/* ── Add Player ── */}
+      <div style={{ marginTop: "40px", borderTop: `1px solid ${G3}`, paddingTop: "28px" }}>
+        <Label>Add Player to Roster</Label>
+        <RosterAddPlayer players={players} savePlayers={savePlayers} />
+      </div>
+
     </Screen>
   );
 }
 
-// ── Admin Setup ──────────────────────────────────────────────────────
-function AdminScreen({ players, savePlayers, setScreen }) {
-  const [name, setName]     = useState("");
-  const [num, setNum]       = useState("");
-  const [level, setLevel]   = useState("Peewees");
-  const [msg, setMsg]       = useState("");
-  const [toRemove, setToRemove] = useState(null);
+// ── Add Player sub-component ─────────────────────────────────────────
+function RosterAddPlayer({ players, savePlayers }) {
+  const [name, setName]   = useState("");
+  const [num, setNum]     = useState("");
+  const [level, setLevel] = useState("Peewees");
+  const [msg, setMsg]     = useState("");
 
   function add() {
     if (!name.trim()) return;
     const p = {
       id: uid(), name: name.trim(), number: num.trim(), level,
       helmetBrand: "", helmetSize: "", jerseySize: "", pantsSize: "",
-      padsSize: "", padsBrand: "", parentSigned: false,
-      signerName: "", signedAt: "", fittedAt: "",
+      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false,
+      parentSigned: false, signerName: "", signedAt: "", fittedAt: "",
     };
     savePlayers([...players, p]);
     setName(""); setNum("");
@@ -1192,36 +1197,11 @@ function AdminScreen({ players, savePlayers, setScreen }) {
     setTimeout(() => setMsg(""), 2500);
   }
 
-  function confirmRemove(id) { setToRemove(id); }
-  function doRemove() { savePlayers(players.filter(p => p.id !== toRemove)); setToRemove(null); }
-
   return (
-    <Screen title="ADMIN SETUP" onBack={() => setScreen("home")}>
-      {/* Confirm dialog */}
-      {toRemove && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
-        }}>
-          <div style={{ background: G2, border: `1px solid ${CARD}`, borderRadius: "12px", padding: "28px 24px", maxWidth: "300px", width: "90%", textAlign: "center" }}>
-            <div style={{ fontFamily: "'Anton', sans-serif", fontSize: "20px", color: WHT, marginBottom: "8px" }}>REMOVE PLAYER?</div>
-            <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "13px", color: MUT, marginBottom: "24px" }}>
-              {players.find(p => p.id === toRemove)?.name} will be removed from the roster. All their fitting data will be lost.
-            </div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setToRemove(null)} style={{ flex: 1, ...btnSt(G3) }}>CANCEL</button>
-              <button onClick={doRemove} style={{ flex: 1, ...btnSt(CARD) }}>REMOVE</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Label>Add Player to Roster</Label>
+    <div>
       <input type="text" placeholder="Player Full Name *" value={name} onChange={e => setName(e.target.value)} style={{ ...inputSt, marginBottom: "10px" }} />
       <input type="text" placeholder="Jersey Number (optional)" value={num} onChange={e => setNum(e.target.value)} style={{ ...inputSt, marginBottom: "14px" }} />
-
-      <Label>Level</Label>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
         {LEVELS.map(lv => (
           <button key={lv} onClick={() => setLevel(lv)} style={{
             flex: 1, background: level === lv ? CARD : G2,
@@ -1232,68 +1212,108 @@ function AdminScreen({ players, savePlayers, setScreen }) {
           }}>{lv}</button>
         ))}
       </div>
-
       <button onClick={add} disabled={!name.trim()} style={btnSt(CARD, !name.trim())}>ADD PLAYER</button>
-
       {msg && (
         <div style={{ background: `${GRN}22`, border: `1px solid ${GRN}55`, borderRadius: "6px", padding: "10px 16px", marginTop: "12px", fontFamily: "'Oswald', sans-serif", fontSize: "14px", color: GRN }}>
           ✓ {msg}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Roster by level */}
-      <div style={{ marginTop: "36px", borderTop: `1px solid ${G3}`, paddingTop: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <Label>Current Roster ({players.length} players)</Label>
+// ── Logistics ───────────────────────────────────────────────────────
+function LogisticsScreen({ setScreen }) {
+  const url = window.location.href;
+  return (
+    <Screen title="DAY-OF LOGISTICS" onBack={() => setScreen("home")}>
+      <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "12px", color: MUT, marginBottom: "24px", lineHeight: 1.6 }}>
+        For coaches and board members only. Follow these steps on fitting day.
+      </div>
+
+      {[
+        {
+          num: "1", title: "Before You Arrive",
+          items: [
+            "Save this page as an app on your phone — tap the share icon → "Add to Home Screen" (Kass and Erin will help)",
+            "All fitting data saves automatically to this device — no login needed",
+            "Coaches: open Equipment Sizing. Board: open Parent Sign-Off",
+          ]
+        },
+        {
+          num: "2", title: "Helmet Station (2 coaches)",
+          items: [
+            "Open Equipment Sizing → select team level → select player name",
+            "Fit the helmet, select brand and size",
+            "If player provides their own helmet, check the box",
+            "Hit Save Fitting — app returns to list automatically",
+            "Send player to Pads Station",
+          ]
+        },
+        {
+          num: "3", title: "Pads Station (2 coaches)",
+          items: [
+            "Open Equipment Sizing → select team level → select player name",
+            "Fit the shoulder pads, select brand and size",
+            "If player provides their own pads, check the box",
+            "Hit Save Fitting",
+            "Send player to Jersey/Pants Station",
+          ]
+        },
+        {
+          num: "4", title: "Jersey & Pants Station (2 coaches)",
+          items: [
+            "Open Equipment Sizing → select team level → select player name",
+            "Select jersey size and pants size",
+            "Hit Save Fitting",
+            "Send player to Checkout",
+          ]
+        },
+        {
+          num: "5", title: "Checkout — Parent Sign-Off (2 board members on iPads)",
+          items: [
+            "Open Parent Sign-Off → select team level → select player name",
+            "Parent reviews the equipment list and replacement costs",
+            "Parent enters name, email, and phone number",
+            "Check each loaned item to acknowledge cost",
+            "Parent draws signature and hits Submit",
+          ]
+        },
+        {
+          num: "6", title: "After Fitting Day",
+          items: [
+            "To update a size: Equipment Sizing → find player → change size → Save Fitting",
+            "To add a late player: Roster → scroll to bottom → Add Player to Roster",
+            "To view all fittings: Roster page",
+          ]
+        },
+      ].map(({ num, title, items }) => (
+        <div key={num} style={{ background: G1, border: `1px solid ${G3}`, borderRadius: "10px", padding: "16px 18px", marginBottom: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+            <div style={{
+              width: "28px", height: "28px", borderRadius: "50%", background: CARD,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              fontFamily: "'Anton', sans-serif", fontSize: "14px", color: WHT,
+            }}>{num}</div>
+            <div style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "15px", color: GOLD, textTransform: "uppercase", letterSpacing: "1px" }}>{title}</div>
+          </div>
+          <ul style={{ paddingLeft: "18px", margin: 0 }}>
+            {items.map((item, i) => (
+              <li key={i} style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "13px", color: WHT, lineHeight: 1.7, marginBottom: "2px" }}>{item}</li>
+            ))}
+          </ul>
         </div>
+      ))}
 
-        {players.length === 0 ? (
-          <Empty msg="No players yet. Add your first player above." />
-        ) : (
-          LEVELS.map(lv => {
-            const grp = sortAlpha(players.filter(p => p.level === lv));
-            if (!grp.length) return null;
-            return (
-              <div key={lv} style={{ marginBottom: "24px" }}>
-                <div style={{
-                  fontFamily: "'Oswald', sans-serif", fontWeight: 700,
-                  fontSize: "12px", letterSpacing: "2px", color: MUT,
-                  textTransform: "uppercase", borderBottom: `1px solid ${G3}`,
-                  paddingBottom: "8px", marginBottom: "10px",
-                }}>
-                  {lv} · {grp.length} players · {grp.filter(isFitted).length} fitted
-                </div>
-                {grp.map(p => (
-                  <div key={p.id} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    background: G1, borderRadius: "6px", padding: "10px 14px", marginBottom: "6px",
-                  }}>
-                    <div>
-                      <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: "15px", color: WHT }}>{p.name}</span>
-                      {p.number && <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: "12px", color: MUT, marginLeft: "8px" }}>#{p.number}</span>}
-                      <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
-                        {isFitted(p) && <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "10px", color: GRN, letterSpacing: "0.5px" }}>✓ FITTED</span>}
-                        {p.parentSigned && <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: "10px", color: GRN, letterSpacing: "0.5px" }}>✓ SIGNED</span>}
-                      </div>
-                    </div>
-                    <button onClick={() => confirmRemove(p.id)} style={{
-                      background: "none", border: `1px solid ${G4}`, borderRadius: "4px",
-                      padding: "5px 11px", color: MUT, cursor: "pointer",
-                      fontFamily: "'Oswald', sans-serif", fontSize: "11px", letterSpacing: "0.5px",
-                      transition: "all 0.12s",
-                    }}>REMOVE</button>
-                  </div>
-                ))}
-              </div>
-            );
-          })
-        )}
+      <div style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}44`, borderRadius: "10px", padding: "16px 18px", marginTop: "8px" }}>
+        <div style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px", color: GOLD, letterSpacing: "1px", marginBottom: "8px" }}>SHARE THIS LINK</div>
+        <div style={{ fontFamily: "monospace", fontSize: "12px", color: WHT, wordBreak: "break-all", lineHeight: 1.6 }}>{url}</div>
       </div>
     </Screen>
   );
 }
 
-// ── Root App ─────────────────────────────────────────────────────────
+
 function App() {
   const [screen, setScreen]   = useState("home");
   const [players, setPlayers] = useState([]);
@@ -1322,7 +1342,7 @@ function App() {
     parent: <ParentScreen {...shared} />,
     coach:  <CoachScreen  {...shared} />,
     roster: <RosterScreen players={players} setScreen={setScreen} />,
-    admin:  <AdminScreen  {...shared} />,
+    logistics: <LogisticsScreen setScreen={setScreen} />,
   }[screen] || <HomeScreen setScreen={setScreen} />;
 }
 
