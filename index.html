@@ -78,6 +78,7 @@ const GOLD = "#FCC728";
 const GOLD_DK = "#D4A820";
 const WHT = "#FFFFFF";
 const GRN = "#4CAF50";
+const RED = "#c0392b";
 
 const LEVELS = ["Peewees", "Juniors", "Seniors"];
 const HELMET_SIZES = ["XS", "S", "M", "L", "XL", "XL+"];
@@ -929,6 +930,7 @@ function CoachScreen({ players, savePlayers, setScreen }) {
       ownPads:     p.ownPads     || false,
       shoeType:    p.shoeType    || "",
       shoeSize:    p.shoeSize    || "",
+      attendingCombine: p.attendingCombine !== undefined ? p.attendingCombine : null,
     });
     setFlash("");
   }
@@ -974,6 +976,21 @@ function CoachScreen({ players, savePlayers, setScreen }) {
             {flash}
           </div>
         )}
+
+        {/* Combine */}
+        <FieldSection label="Attending Combine?">
+          <div style={{ display: "flex", gap: "10px" }}>
+            {[["Yes", true], ["No", false]].map(([lbl, val]) => (
+              <button key={lbl} onClick={() => setForm(x => ({ ...x, attendingCombine: val }))} style={{
+                flex: 1, background: f.attendingCombine === val ? (val ? GRN : RED) : G2,
+                border: "1px solid " + (f.attendingCombine === val ? (val ? GRN : RED) : G3),
+                borderRadius: "8px", padding: "12px", color: WHT,
+                fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "16px",
+                cursor: "pointer", transition: "all 0.12s",
+              }}>{lbl}</button>
+            ))}
+          </div>
+        </FieldSection>
 
         {/* Helmet */}
         {!f.ownHelmet && (
@@ -1207,6 +1224,7 @@ function RosterScreen({ players, savePlayers, setScreen }) {
                   ["Jersey", p.jerseySize],
                   ["Pants", p.pantsSize],
                   ["Shoe", p.shoeType ? `${p.shoeType} ${p.shoeSize}` : ""],
+                  ["Combine", p.attendingCombine === true ? "Yes ✓" : p.attendingCombine === false ? "No" : ""],
                   ["Pads", p.ownPads ? "Own Pads ✓" : `${p.padsBrand ? p.padsBrand + " " : ""}${p.padsSize}`],
                 ].map(([lbl, val]) => (
                   <div key={lbl} style={{
@@ -1246,7 +1264,7 @@ function RosterAddPlayer({ players, savePlayers }) {
     const p = {
       id: uid(), name: name.trim(), number: num.trim(), level,
       helmetBrand: "", helmetSize: "", jerseySize: "", pantsSize: "",
-      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false, shoeType: "", shoeSize: "", shoeType: "", shoeSize: "",
+      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false, shoeType: "", shoeSize: "", attendingCombine: null, shoeType: "", shoeSize: "",
       parentSigned: false, signerName: "", signedAt: "", fittedAt: "",
     };
     savePlayers([...players, p]);
@@ -1280,8 +1298,46 @@ function RosterAddPlayer({ players, savePlayers }) {
   );
 }
 
+// ── Reset Data Button ────────────────────────────────────────────────
+function ResetDataButton({ players, savePlayers }) {
+  const [confirm, setConfirm] = React.useState(false);
+  function reset() {
+    const blank = players.map(p => ({
+      ...p,
+      helmetBrand: "", helmetSize: "", jerseySize: "", pantsSize: "",
+      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false,
+      shoeType: "", shoeSize: "", attendingCombine: null,
+      parentSigned: false, signerName: "", signerEmail: "", signerPhone: "",
+      sigData: "", signedAt: "", fittedAt: "",
+    }));
+    savePlayers(blank);
+    setConfirm(false);
+  }
+  return (
+    <div style={{ marginBottom: "14px" }}>
+      {!confirm ? (
+        <button onClick={() => setConfirm(true)} style={{
+          width: "100%", background: "#5c1a1a", border: "1px solid #c0392b",
+          borderRadius: "10px", padding: "16px", color: WHT, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "15px", letterSpacing: "1px",
+        }}>🗑️ RESET ALL FITTING DATA</button>
+      ) : (
+        <div style={{ background: "#5c1a1a", border: "1px solid #c0392b", borderRadius: "10px", padding: "16px" }}>
+          <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "14px", color: WHT, marginBottom: "12px" }}>
+            This will clear ALL fittings and signatures. Roster names and numbers stay. Are you sure?
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button onClick={reset} style={{ flex: 1, background: "#c0392b", border: "none", borderRadius: "8px", padding: "12px", color: WHT, fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>YES, RESET ALL</button>
+            <button onClick={() => setConfirm(false)} style={{ flex: 1, background: G2, border: "1px solid " + G3, borderRadius: "8px", padding: "12px", color: WHT, fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>CANCEL</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Logistics ───────────────────────────────────────────────────────
-function LogisticsScreen({ setScreen }) {
+function LogisticsScreen({ players, savePlayers, setScreen }) {
   const url = window.location.href;
   return (
     <Screen title="DAY-OF LOGISTICS" onBack={() => setScreen("home")}>
@@ -1361,6 +1417,9 @@ function LogisticsScreen({ setScreen }) {
         </div>
       ))}
 
+      {/* Reset Data Button */}
+      <ResetDataButton players={players} savePlayers={savePlayers} />
+
       <div style={{ background: `${GOLD}15`, border: `1px solid ${GOLD}44`, borderRadius: "10px", padding: "16px 18px", marginTop: "8px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <div style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px", color: GOLD, letterSpacing: "1px" }}>SHARE THIS LINK</div>
@@ -1405,7 +1464,7 @@ function App() {
     parent: <ParentScreen {...shared} />,
     coach:  <CoachScreen  {...shared} />,
     roster: <RosterScreen players={players} savePlayers={savePlayers} setScreen={setScreen} />,
-    logistics: <LogisticsScreen setScreen={setScreen} />,
+    logistics: <LogisticsScreen players={players} savePlayers={savePlayers} setScreen={setScreen} />,
   }[screen] || <HomeScreen setScreen={setScreen} />;
 }
 
