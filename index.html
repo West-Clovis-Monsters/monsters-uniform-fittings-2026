@@ -931,6 +931,8 @@ function CoachScreen({ players, savePlayers, setScreen }) {
       shoeType:    p.shoeType    || "",
       shoeSize:    p.shoeSize    || "",
       attendingCombine: p.attendingCombine !== undefined ? p.attendingCombine : null,
+      height: p.height || "",
+      weight: p.weight || "",
     });
     setFlash("");
   }
@@ -991,6 +993,25 @@ function CoachScreen({ players, savePlayers, setScreen }) {
             ))}
           </div>
         </FieldSection>
+
+
+        {/* Height & Weight */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
+          <FieldSection label="Height" style={{ flex: 1 }}>
+            <input
+              type="text" placeholder="e.g. 5ft 2in"
+              value={f.height} onChange={e => setForm(x => ({ ...x, height: e.target.value }))}
+              style={{ ...inputSt, width: "100%" }}
+            />
+          </FieldSection>
+          <FieldSection label="Weight (lbs)" style={{ flex: 1 }}>
+            <input
+              type="number" placeholder="e.g. 120"
+              value={f.weight} onChange={e => setForm(x => ({ ...x, weight: e.target.value }))}
+              style={{ ...inputSt, width: "100%" }}
+            />
+          </FieldSection>
+        </div>
 
         {/* Helmet */}
         {!f.ownHelmet && (
@@ -1225,6 +1246,8 @@ function RosterScreen({ players, savePlayers, setScreen }) {
                   ["Pants", p.pantsSize],
                   ["Shoe", p.shoeType ? `${p.shoeType} ${p.shoeSize}` : ""],
                   ["Combine", p.attendingCombine === true ? "Yes ✓" : p.attendingCombine === false ? "No" : ""],
+                  ["Height", p.height || ""],
+                  ["Weight", p.weight ? p.weight + " lbs" : ""],
                   ["Pads", p.ownPads ? "Own Pads ✓" : `${p.padsBrand ? p.padsBrand + " " : ""}${p.padsSize}`],
                 ].map(([lbl, val]) => (
                   <div key={lbl} style={{
@@ -1264,7 +1287,7 @@ function RosterAddPlayer({ players, savePlayers }) {
     const p = {
       id: uid(), name: name.trim(), number: num.trim(), level,
       helmetBrand: "", helmetSize: "", jerseySize: "", pantsSize: "",
-      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false, shoeType: "", shoeSize: "", attendingCombine: null, shoeType: "", shoeSize: "",
+      padsSize: "", padsBrand: "", ownHelmet: false, ownPads: false, shoeType: "", shoeSize: "", attendingCombine: null, height: "", weight: "", shoeType: "", shoeSize: "",
       parentSigned: false, signerName: "", signedAt: "", fittedAt: "",
     };
     savePlayers([...players, p]);
