@@ -951,9 +951,7 @@ function CoachScreen({ players, savePlayers, setScreen }) {
 
   if (selected) {
     const f = form;
-    const helmetOk = f.ownHelmet || (f.helmetBrand && f.helmetSize);
-    const padsOk   = f.ownPads   || (f.padsSize && f.padsBrand);
-    const canSave = helmetOk && f.jerseySize && f.pantsSize && padsOk;
+    const canSave = true; // Allow saving at any station
     return (
       <Screen title="EQUIPMENT SIZING" onBack={() => { setSelected(null); setFlash(""); }}>
         {/* Header */}
@@ -1102,7 +1100,7 @@ function CoachScreen({ players, savePlayers, setScreen }) {
         </FieldSection>
 
         <button onClick={save} disabled={!canSave} style={btnSt(CARD, !canSave)}>
-          {canSave ? "SAVE FITTING" : "COMPLETE ALL SIZES TO SAVE"}
+          "SAVE FITTING"
         </button>
         <button onClick={() => setSelected(null)} style={{ ...btnSt(G2), marginTop: "10px" }}>← BACK TO LIST</button>
       </Screen>
