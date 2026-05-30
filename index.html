@@ -24,21 +24,21 @@
     // See Day-Of Logistics page for setup instructions
     const DB_URL = 'https://monsters-uniform-fittings-2026-default-rtdb.firebaseio.com';
 
+    // Load all players — Firebase stored as {id: playerObj}
     async function loadPlayers() {
       if (DB_URL) {
         try {
           const r = await fetch(DB_URL + '/wcm_fittings.json');
           const data = await r.json();
-          if (data && Array.isArray(data) && data.length) return data;
-          if (data && typeof data === 'object') {
-            const arr = Object.values(data);
+          if (data && typeof data === 'object' && !Array.isArray(data)) {
+            const arr = Object.values(data).filter(Boolean);
             if (arr.length) return arr;
           }
-          // Firebase empty — use fresh SEED_PLAYERS, skip stale localStorage
+          // Firebase empty — seed it with SEED_PLAYERS
+          await seedFirebase();
           return SEED_PLAYERS;
         } catch(e) {
           console.warn('Firebase load failed, using localStorage', e);
-          // Only fall back to localStorage if Firebase is unreachable
           try {
             const saved = JSON.parse(localStorage.getItem('wcm_fittings_v2') || 'null');
             if (saved && saved.length) return saved;
@@ -48,18 +48,46 @@
       return SEED_PLAYERS;
     }
 
-    async function persistPlayers(players) {
-      // Always save to localStorage as backup
-      try { localStorage.setItem('wcm_fittings_v2', JSON.stringify(players)); } catch {}
-      // Also sync to Firebase if configured
+    // Seed Firebase with SEED_PLAYERS (run once when DB is empty)
+    async function seedFirebase() {
+      try {
+        const obj = {};
+        SEED_PLAYERS.forEach(p => { obj[p.id] = p; });
+        await fetch(DB_URL + '/wcm_fittings.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(obj),
+        });
+      } catch(e) { console.warn('Seed failed:', e); }
+    }
+
+    // Save a single player — only touches that player's node in Firebase
+    async function saveOnePlayer(player) {
+      try { localStorage.setItem('wcm_fittings_v2', JSON.stringify(player)); } catch {}
       if (DB_URL) {
         try {
+          await fetch(DB_URL + '/wcm_fittings/' + player.id + '.json', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(player),
+          });
+        } catch(e) { console.warn('Firebase single-player save failed:', e); }
+      }
+    }
+
+    // Full save — used for reset and add player operations
+    async function persistPlayers(players) {
+      try { localStorage.setItem('wcm_fittings_v2', JSON.stringify(players)); } catch {}
+      if (DB_URL) {
+        try {
+          const obj = {};
+          players.forEach(p => { obj[p.id] = p; });
           await fetch(DB_URL + '/wcm_fittings.json', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(players),
+            body: JSON.stringify(obj),
           });
-        } catch(e) { console.warn('Firebase save failed:', e); }
+        } catch(e) { console.warn('Firebase full save failed:', e); }
       }
     }
 
@@ -938,12 +966,14 @@ function CoachScreen({ players, savePlayers, setScreen }) {
   }
 
   function save() {
-    const updated = players.map(p =>
-      p.id === selected.id
-        ? { ...p, ...form, fittedAt: new Date().toISOString() }
-        : p
-    );
+    const updatedPlayer = { ...selected, ...form,
+      ownHelmet: form.ownHelmet || false,
+      ownPads: form.ownPads || false,
+      fittedAt: new Date().toISOString()
+    };
+    const updated = players.map(p => p.id === selected.id ? updatedPlayer : p);
     savePlayers(updated);
+    saveOnePlayer(updatedPlayer);
     setFlash("✓ Saved!");
     setSelected(null);
     setTimeout(() => setFlash(""), 3000);
@@ -1011,6 +1041,13 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           </FieldSection>
         </div>
 
+
+        <button onClick={save} style={{
+          width: "100%", background: G2, border: `1px solid ${G3}`,
+          borderRadius: "8px", padding: "10px", color: GOLD, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px",
+          letterSpacing: "1px", marginBottom: "24px", transition: "all 0.12s",
+        }}>💾 SAVE & CONTINUE</button>
         {/* Helmet */}
         {!f.ownHelmet && (
           <>
@@ -1037,6 +1074,13 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           </span>
         </label>
 
+
+        <button onClick={save} style={{
+          width: "100%", background: G2, border: `1px solid ${G3}`,
+          borderRadius: "8px", padding: "10px", color: GOLD, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px",
+          letterSpacing: "1px", marginBottom: "24px", transition: "all 0.12s",
+        }}>💾 SAVE & CONTINUE</button>
         {/* Pads */}
         {!f.ownPads && (
           <>
@@ -1063,6 +1107,13 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           </span>
         </label>
 
+
+        <button onClick={save} style={{
+          width: "100%", background: G2, border: `1px solid ${G3}`,
+          borderRadius: "8px", padding: "10px", color: GOLD, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px",
+          letterSpacing: "1px", marginBottom: "24px", transition: "all 0.12s",
+        }}>💾 SAVE & CONTINUE</button>
         {/* Jersey */}
         <FieldSection label="Jersey Size">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -1070,6 +1121,13 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           </div>
         </FieldSection>
 
+
+        <button onClick={save} style={{
+          width: "100%", background: G2, border: `1px solid ${G3}`,
+          borderRadius: "8px", padding: "10px", color: GOLD, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px",
+          letterSpacing: "1px", marginBottom: "24px", transition: "all 0.12s",
+        }}>💾 SAVE & CONTINUE</button>
         {/* Pants */}
         <FieldSection label="Pants Size">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -1077,6 +1135,13 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           </div>
         </FieldSection>
 
+
+        <button onClick={save} style={{
+          width: "100%", background: G2, border: `1px solid ${G3}`,
+          borderRadius: "8px", padding: "10px", color: GOLD, cursor: "pointer",
+          fontFamily: "'Oswald', sans-serif", fontWeight: 700, fontSize: "13px",
+          letterSpacing: "1px", marginBottom: "24px", transition: "all 0.12s",
+        }}>💾 SAVE & CONTINUE</button>
         {/* Shoe Size */}
         <FieldSection label="Sock/Shoe Size">
           <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
@@ -1099,8 +1164,8 @@ function CoachScreen({ players, savePlayers, setScreen }) {
           )}
         </FieldSection>
 
-        <button onClick={save} disabled={!canSave} style={btnSt(CARD, !canSave)}>
-          "SAVE FITTING"
+        <button onClick={save} style={btnSt(CARD)}>
+          SAVE FITTING ✓
         </button>
         <button onClick={() => setSelected(null)} style={{ ...btnSt(G2), marginTop: "10px" }}>← BACK TO LIST</button>
       </Screen>
@@ -1464,6 +1529,11 @@ function App() {
 
   useEffect(() => {
     loadPlayers().then(p => { setPlayers(p); setReady(true); });
+    // Poll Firebase every 30s so all devices stay in sync
+    const interval = setInterval(() => {
+      loadPlayers().then(p => setPlayers(p));
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   async function savePlayers(updated) {
